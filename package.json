@@ -1,0 +1,57 @@
+{
+  "name": "@h7/compute-js-rsc",
+  "description": "React Server utility library for Fastly Compute",
+  "version": "0.1.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harmony7/compute-js-rsc.git"
+  },
+  "author": {
+    "name": "Katsuyuki Omuro",
+    "email": "komuro@fastly.com"
+  },
+  "main": "./build/index.js",
+  "types": "./build/index.d.ts",
+  "exports": {
+    ".": "./build/index.js",
+    "./backend": "./build/backend.js",
+    "./client": "./build/client.js",
+    "./ssr": "./build/ssr.js"
+  },
+  "scripts": {
+    "prepare": "npm run build",
+    "build": "tsc -p tsconfig.build.json",
+    "clean": "rm -rf build",
+    "coverage": "c8 npm test",
+    "test": "npm run test:unit",
+    "test:unit": "node --test --no-warnings=ExperimentalWarning --loader ts-node/esm test/unit/**/*.test.ts"
+  },
+  "dependencies": {
+    "react": "18.3.0-canary-2bc7d336a-20240205",
+    "react-dom": "18.3.0-canary-2bc7d336a-20240205",
+    "react-server-dom-webpack": "18.3.0-canary-2bc7d336a-20240205"
+  },
+  "devDependencies": {
+    "@fastly/js-compute": "^3.7.3",
+    "@types/react": "^18.2.55",
+    "c8": "^8.0.1",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.2.2"
+  },
+  "files": [
+    "build/**/*.js",
+    "build/**/*.js.map",
+    "build/**/*.d.ts",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md"
+  ],
+  "keywords": [
+    "react",
+    "rsc",
+    "server",
+    "fastly",
+    "compute"
+  ]
+}
