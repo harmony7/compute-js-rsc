@@ -1,14 +1,20 @@
-import React from "react";
+import React, { type ReactElement } from "react";
 import ReactDOMServer from "react-dom/server";
 import ReactServerDOMClient from "react-server-dom-webpack/client";
+
+// TODO: This declaration will no longer be needed when React exposes the definition
+declare module "React" {
+  function use<T>(obj: Promise<T>): T;
+}
+
+type FlightContent = { root: ReactElement };
 
 // * SSR *
 // "Shell" component used during SSR
 // The 'use' hook works with ReactDOMServer.renderToReadableStream,
 // waiting for the promise to resolve to the React root
-function Shell({root}: {root: Promise<any>}): any {
-  // TODO: This "as any" will no longer be needed when React exposes the definition
-  return (React as any).use(root);
+function Shell(props: {flightContentPromise: Promise<FlightContent>}): any {
+  return React.use(props.flightContentPromise).root;
 }
 
 // * SSR *
@@ -16,32 +22,26 @@ function Shell({root}: {root: Promise<any>}): any {
 export async function renderFlightStreamToHtmlStream(
   flightStream: ReadableStream<Uint8Array>
 ) {
+  // This procedure is borrowed form React's flight fixture.
 
-  // This hack is borrowed from React's flight fixture, where they
-  // create a temporary formState object before parsing the flight stream,
-  // and then fill it in along the parsing.
-  // They say it is a hack, so we hope React will clean this up
+  // We need to get the formState before we start rendering, but we also
+  // need to run the Flight client inside the render to get all the preloads.
+  // The API is ambivalent about what's the right one, so we need two for now.
 
-  // the "lazy" formState
-  const formState: any[] = [];
-  async function parseFlightStream() {
-    const { root, formState: flightFormState } = await ReactServerDOMClient.createFromReadableStream(flightStream);
-    // We shouldn't be assuming formState is an object type but at the moment
-    // we have no way of setting the form state from within the render
-    Object.assign(formState, flightFormState);
+  // Tee the response into two streams so that we can do both.
+  // TODO: use .tee() when Compute runtime supports it
+  // const [ rscResponse1, rscResponse2 ] = flightStream.tee();
+  const [ rscResponse1, rscResponse2 ] = await teeReadableStream(flightStream);
 
-    return root;
-  }
+  const { formState } = await ReactServerDOMClient.createFromReadableStream(rscResponse1);
 
-  const root = parseFlightStream();
+  // This is equivalent to the following JSX, but we're not using JSX in this file:
+  // <Shell flightContentPromise={/* createFromReadableStream */} />
+  const model = React.createElement(Shell, {
+    flightContentPromise: ReactServerDOMClient.createFromReadableStream(rscResponse2),
+  });
 
-  // noinspection JSCheckFunctionSignatures
-  const model = React.createElement(Shell, { root });
-
-  // The "await" on the next line will actually cause the React.use in the Shell to await the promise
-  // Therefore, by the time the rendering actually happens, any useFormState() or useFormStatus() in
-  // the children will have the updated value.
-
+  // Render it into HTML by resolving the client components
   return await ReactDOMServer.renderToReadableStream(
     model,
     {
@@ -52,7 +52,6 @@ export async function renderFlightStreamToHtmlStream(
       formState,
     }
   );
-
 }
 
 // * SSR *
