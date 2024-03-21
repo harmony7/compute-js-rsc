@@ -30,20 +30,20 @@
   },
   "dependencies": {
     "acorn-loose": "^8.4.0",
-    "react": "18.3.0-canary-2bc7d336a-20240205",
-    "react-dom": "18.3.0-canary-2bc7d336a-20240205",
-    "react-server-dom-webpack": "18.3.0-canary-2bc7d336a-20240205"
+    "react": "18.3.0-canary-a4939017f-20240320",
+    "react-dom": "18.3.0-canary-a4939017f-20240320",
+    "react-server-dom-webpack": "18.3.0-canary-a4939017f-20240320"
   },
   "devDependencies": {
-    "@fastly/js-compute": "^3.7.3",
+    "@fastly/js-compute": "^3.11.0",
     "@types/react": "^18.2.55",
     "c8": "^8.0.1",
     "ts-node": "^10.9.1",
-    "typescript": "^5.2.2",
+    "typescript": "^5.4.3",
     "webpack": "^5.90.1"
   },
   "peerDependencies": {
-    "react-server-dom-webpack": "18.3.0-canary-2bc7d336a-20240205",
+    "react-server-dom-webpack": "18.3.0-canary-a4939017f-20240320",
     "webpack": "^5"
   },
   "files": [
