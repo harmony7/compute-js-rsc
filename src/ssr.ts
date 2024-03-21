@@ -147,13 +147,7 @@ export async function renderFlightStreamToHtmlStreamWithFlightData(
   // Because a ReadableStream can only be streamed from once, we tee it.
   // TODO: use .tee() when Compute runtime supports it
   // const [ flightStream1, flightStream2 ] = flightStream.tee();
-  const [ flightStream1, flightStream2 ] = await new Promise<[ReadableStream<Uint8Array>, ReadableStream<Uint8Array>]>(async resolve => {
-    const content = await new Response(flightStream).text();
-    resolve([
-      new Response(content).body!,
-      new Response(content).body!,
-    ]);
-  });
+  const [ flightStream1, flightStream2 ] = await teeReadableStream(flightStream);
 
   // Render the flight stream to HTML (purpose A)
   const renderStream = await renderFlightStreamToHtmlStream(flightStream1);
@@ -161,4 +155,14 @@ export async function renderFlightStreamToHtmlStreamWithFlightData(
   // Inject the flight stream data into the HTML stream as a script tag (purpose B)
   return injectFlightStreamIntoRenderStream(renderStream, flightStream2);
 
+}
+
+async function teeReadableStream(stream: ReadableStream<Uint8Array>) {
+  return new Promise<[ReadableStream<Uint8Array>, ReadableStream<Uint8Array>]>(async resolve => {
+    const content = await new Response(stream).arrayBuffer();
+    resolve([
+      new Response(content).body!,
+      new Response(content).body!,
+    ]);
+  });
 }
