@@ -1,7 +1,7 @@
 {
   "name": "@h7/compute-js-rsc",
   "description": "React Server utility library for Fastly Compute",
-  "version": "0.1.0-alpha.1",
+  "version": "0.1.0-alpha.2",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/harmony7/compute-js-rsc.git"
