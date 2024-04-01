@@ -14,11 +14,11 @@
   "types": "./build/index.d.ts",
   "exports": {
     ".": "./build/index.js",
-    "./backend": "./build/backend.js",
-    "./client": "./build/client.js",
-    "./ssr": "./build/ssr.js",
-    "./webpack-loader": "./build/webpack-loader.js",
-    "./webpack-plugin": "./build/webpack-plugin.js"
+    "./backend": "./build/backend/index.js",
+    "./client": "./build/client/index.js",
+    "./ssr": "./build/ssr/index.js",
+    "./webpack-loader": "./build/webpack-loader/index.js",
+    "./webpack-plugin": "./build/webpack-plugin/index.js"
   },
   "scripts": {
     "prepare": "npm run build",

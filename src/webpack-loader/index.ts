@@ -1,6 +1,5 @@
-import type { LoaderDefinition, LoaderContext } from 'webpack';
-import url from 'url';
-
+import url from 'node:url';
+import { type LoaderDefinition, type LoaderContext } from 'webpack';
 import * as acorn from 'acorn-loose';
 
 type AcornProgram = ReturnType<typeof acorn.parse>['body'];

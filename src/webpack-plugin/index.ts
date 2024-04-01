@@ -1,7 +1,6 @@
-import url from 'url';
+import url from 'node:url';
 import webpack from 'webpack';
-
-import { ServerManifest } from './types.js';
+import { type ServerManifest } from '../types.js';
 
 const PLUGIN_NAME = 'React Flight Webpack Server Plugin';
 

@@ -1,65 +1,74 @@
 import React from 'react';
 import ReactServerDOMServer from 'react-server-dom-webpack/server';
 
-import { ClientManifest, ReactFormState, ServerManifest } from "./types.js";
+import {
+  type ClientManifest,
+  type ReactFormState,
+  type ServerManifest,
+} from "../types";
 
 declare function __webpack_require__(moduleId: string): any;
 
+export type ModuleMaps = {
+  clientModuleMap?: ClientManifest;
+  serverModuleMap?: ServerManifest;
+};
+
+const _moduleMaps: ModuleMaps = {};
 // * SERVER *
-// Reexport React.createElement
-export { createElement as createReactElement } from 'react';
+// Sets the client and server module manifests
+export function setModuleMaps(moduleMaps: ModuleMaps) {
+  _moduleMaps.clientModuleMap = moduleMaps.clientModuleMap;
+  _moduleMaps.serverModuleMap = moduleMaps.serverModuleMap;
+}
 
 // * SERVER *
 // Takes the passed-in return value and form state, and generates a flight stream.
 export function generateFlightStream(
   rootElement: React.ReactElement,
   returnValue: any,
-  formState: null | ReactFormState<any, any>,
-  clientModuleMap: ClientManifest,
+  formState: null | ReactFormState<any, any> = null,
 ): ReadableStream<Uint8Array> {
+  if (_moduleMaps.clientModuleMap == null) {
+    throw new Error('setModuleMaps must be called before generateFlightStream');
+  }
+
   const payload = {
     root: rootElement,
     returnValue,
     formState,
   };
-
-  return ReactServerDOMServer.renderToReadableStream(payload, clientModuleMap);
+  return ReactServerDOMServer.renderToReadableStream(payload, _moduleMaps.clientModuleMap);
 }
 
 // * SERVER *
 // Performs an RSC action call and returns the result.
 export async function execRscAction(
   rscAction: string,
-  request: Request,
-  serverModuleMap: ServerManifest,
+  body: any,
 ): Promise<any> {
+  if (_moduleMaps.serverModuleMap == null) {
+    throw new Error('setModuleMaps must be called before execRscAction');
+  }
 
   // Find the module and action based on the rscAction value
   const [url, name] = rscAction.split('#');
-  const moduleId = serverModuleMap[url]?.id;
+  const moduleId = _moduleMaps.serverModuleMap[url]?.id;
   if (moduleId == null) {
     throw new Error('Module not found');
   }
 
-  // noinspection JSUnresolvedReference
   const module = __webpack_require__(moduleId);
   const action = module[name];
 
   // Validate that this is actually a function we intended to expose and
-  // not the client trying to invoke arbitrary functions.
+  // not the client trying to invoke an arbitrary function.
   if (action.$$typeof !== Symbol.for('react.server.reference')) {
     throw new Error('Invalid action');
   }
 
-  // Decode the args from the request body.
-  let body;
-  const contentType = request.headers.get('Content-Type') ?? 'text/plain; charset=UTF-8';
-  if (contentType.startsWith('multipart/form-data;')) {
-    body = await request.formData();
-  } else {
-    body = await request.text();
-  }
-  const args = await ReactServerDOMServer.decodeReply(body, serverModuleMap);
+  // Decode the args from the body.
+  const args = await ReactServerDOMServer.decodeReply(body, _moduleMaps.serverModuleMap);
 
   // Make the function call
   const result = action.apply(null, args);
