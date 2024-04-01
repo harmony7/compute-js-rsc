@@ -30,9 +30,9 @@
   },
   "dependencies": {
     "acorn-loose": "^8.4.0",
-    "react": "18.3.0-canary-a4939017f-20240320",
-    "react-dom": "18.3.0-canary-a4939017f-20240320",
-    "react-server-dom-webpack": "18.3.0-canary-a4939017f-20240320"
+    "react": "19.0.0-canary-a73c3450e-20240329",
+    "react-dom": "19.0.0-canary-a73c3450e-20240329",
+    "react-server-dom-webpack": "19.0.0-canary-a73c3450e-20240329"
   },
   "devDependencies": {
     "@fastly/js-compute": "^3.11.0",
@@ -43,7 +43,7 @@
     "webpack": "^5.90.1"
   },
   "peerDependencies": {
-    "react-server-dom-webpack": "18.3.0-canary-a4939017f-20240320",
+    "react-server-dom-webpack": "19.0.0-canary-a73c3450e-20240329",
     "webpack": "^5"
   },
   "files": [
