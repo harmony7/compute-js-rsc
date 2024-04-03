@@ -21,7 +21,7 @@
     "./webpack-plugin": "./build/webpack-plugin/index.js"
   },
   "scripts": {
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "build": "tsc -p tsconfig.build.json",
     "clean": "rm -rf build",
     "coverage": "c8 npm test",
