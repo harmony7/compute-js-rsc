@@ -1,4 +1,5 @@
-import url from 'node:url';
+import nodePath from 'node:path';
+import nodeUrl from 'node:url';
 import { type LoaderDefinition, type LoaderContext } from 'webpack';
 import * as acorn from 'acorn-loose';
 
@@ -35,10 +36,10 @@ function addExportNames(names: Array<string>, node: any) {
 }
 
 async function parseExportNamesInto(
-  loader: LoaderContext<{}>,
   body: AcornProgram,
   names: Array<string>,
-  parentModulePath: string,
+  parentURL: string,
+  loaderCtx: LoaderContext<{}>,
 ): Promise<void> {
   for (let i = 0; i < body.length; i++) {
     const node = body[i];
@@ -49,19 +50,21 @@ async function parseExportNamesInto(
           continue;
         } else {
 
-          const resolve = loader.getResolve({
+          const resolve = loaderCtx.getResolve({
             conditionNames: ['node', 'import'],
-            dependencyType: 'module'
+            dependencyType: 'module',
           });
 
           if (typeof node.source.value !== 'string') {
             throw new Error('Expected the node value to be string.');
           }
-          console.log("resolving ", parentModulePath, node.source.value);
-          const modulePath = await resolve(parentModulePath, node.source.value);
+
+          const context = nodePath.dirname(nodeUrl.fileURLToPath(parentURL));
+          const modulePath = await resolve(context, node.source.value);
+          const url = nodeUrl.pathToFileURL(modulePath).href;
 
           const source = await new Promise(resolve => {
-            loader.loadModule(modulePath, (err, source) => {
+            loaderCtx.loadModule(modulePath, (err, source) => {
               if (err) { resolve(err); return; }
               resolve(source);
             })
@@ -82,7 +85,7 @@ async function parseExportNamesInto(
             console.error('Error parsing %s %s', modulePath, x instanceof Error ? x.message : String(x));
             continue;
           }
-          await parseExportNamesInto(loader, childBody, names, modulePath);
+          await parseExportNamesInto(childBody, names, url, loaderCtx);
           continue;
         }
       case 'ExportDefaultDeclaration':
@@ -110,17 +113,18 @@ async function parseExportNamesInto(
   }
 }
 
-async function transformClientModule(loader: LoaderContext<{}>, source: string, body: AcornProgram, resourcePath: string) {
-
+async function transformClientModule(
+  body: AcornProgram,
+  url: string,
+  loaderCtx: LoaderContext<{}>,
+) {
   const names: Array<string> = [];
 
-  await parseExportNamesInto(loader, body, names, resourcePath);
+  await parseExportNamesInto(body, names, url, loaderCtx);
 
   if (names.length === 0) {
     return '';
   }
-
-  const moduleId = url.pathToFileURL(resourcePath).href;
 
   let newSrc =
     'import {registerClientReference} from "react-server-dom-webpack/server";\n';
@@ -132,7 +136,7 @@ async function transformClientModule(loader: LoaderContext<{}>, source: string, 
       newSrc +=
         'throw new Error(' +
         JSON.stringify(
-          `1Attempted to call the default export of ${moduleId} from the server` +
+          `Attempted to call the default export of ${url} from the server` +
           `but it's on the client. It's not possible to invoke a client function from ` +
           `the server, it can only be rendered as a Component or passed to props of a` +
           `Client Component.`,
@@ -144,14 +148,14 @@ async function transformClientModule(loader: LoaderContext<{}>, source: string, 
       newSrc +=
         'throw new Error(' +
         JSON.stringify(
-          `1Attempted to call ${name}() from the server but ${name} is on the client. ` +
+          `Attempted to call ${name}() from the server but ${name} is on the client. ` +
           `It's not possible to invoke a client function from the server, it can ` +
           `only be rendered as a Component or passed to props of a Client Component.`,
         ) +
         ');';
     }
     newSrc += '},';
-    newSrc += JSON.stringify(moduleId) + ',';
+    newSrc += JSON.stringify(url) + ',';
     newSrc += JSON.stringify(name) + ');\n';
   }
   return newSrc;
@@ -188,7 +192,12 @@ function addLocalExportedNames(names: Map<string, string>, node: any) {
   }
 }
 
-async function transformServerModule(loader: LoaderContext<{}>, source: string, body: AcornProgram, resourcePath: string) {
+async function transformServerModule(
+  source: string,
+  body: AcornProgram,
+  url: string,
+  loaderCtx: LoaderContext<{}>,
+) {
   // If the same local name is exported more than once, we only need one of the names.
   const localNames: Map<string, string> = new Map();
   const localTypes: Map<string, string> = new Map();
@@ -242,8 +251,6 @@ async function transformServerModule(loader: LoaderContext<{}>, source: string, 
     return source;
   }
 
-  const moduleId = url.pathToFileURL(resourcePath).href;
-
   let newSrc = source + '\n\n;';
   newSrc +=
     'import {registerServerReference} from "react-server-dom-webpack/server";\n';
@@ -253,13 +260,13 @@ async function transformServerModule(loader: LoaderContext<{}>, source: string, 
       newSrc += 'if (typeof ' + local + ' === "function") ';
     }
     newSrc += 'registerServerReference(' + local + ',';
-    newSrc += JSON.stringify(moduleId) + ',';
+    newSrc += JSON.stringify(url) + ',';
     newSrc += JSON.stringify(exported) + ');\n';
   });
   return newSrc;
 }
 
-async function transformModuleIfNeeded(loader: LoaderContext<{}>, source: string, resourcePath: string) {
+async function transformModuleIfNeeded(loaderCtx: LoaderContext<{}>, source: string) {
   // Do a quick check for the exact string. If it doesn't exist, don't
   // bother parsing.
   if (
@@ -277,7 +284,7 @@ async function transformModuleIfNeeded(loader: LoaderContext<{}>, source: string
     }).body;
   } catch (x) {
     // eslint-disable-next-line react-internal/no-production-logging
-    console.error('Error parsing %s %s', resourcePath, x instanceof Error ? x.message : String(x));
+    console.error('Error parsing %s %s', loaderCtx.resourcePath, x instanceof Error ? x.message : String(x));
     return source;
   }
 
@@ -300,16 +307,18 @@ async function transformModuleIfNeeded(loader: LoaderContext<{}>, source: string
     return source;
   }
 
+  const url = nodeUrl.pathToFileURL(loaderCtx.resourcePath).href;
+
   if (useClient) {
-    return await transformClientModule(loader, source, body, resourcePath);
+    return await transformClientModule(body, url, loaderCtx);
   }
 
-  return await transformServerModule(loader, source, body, resourcePath);
+  return await transformServerModule(source, body, url, loaderCtx);
 }
 
 const loader: LoaderDefinition = function (source) {
   const next = this.async();
-  transformModuleIfNeeded(this, source, this.resourcePath)
+  transformModuleIfNeeded(this, source)
     .then((newSrc) => {
       next(null, newSrc);
     });
