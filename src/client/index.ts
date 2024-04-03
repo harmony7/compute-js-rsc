@@ -27,7 +27,7 @@ export async function hydrateApp(flightStream?: ReadableStream<Uint8Array>) {
     }
   );
 
-  const updateRoot: React.Dispatch<any> = ReactDOMClient.hydrateRoot(document, root, { formState, });
+  const updateRoot = ReactDOMClient.hydrateRoot(document, root, { formState, });
 
   // This is the function that is called when a client component ('use client')
   // calls an RSC action ('use server').
@@ -53,7 +53,7 @@ export async function hydrateApp(flightStream?: ReadableStream<Uint8Array>) {
     );
 
     React.startTransition(() => {
-      updateRoot(root);
+      updateRoot.render(root);
     });
 
     return returnValue;
