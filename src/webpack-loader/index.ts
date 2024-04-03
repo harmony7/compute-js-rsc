@@ -1,9 +1,74 @@
+import nodeFs from 'node:fs';
 import nodePath from 'node:path';
 import nodeUrl from 'node:url';
 import { type LoaderDefinition, type LoaderContext } from 'webpack';
 import * as acorn from 'acorn-loose';
 
 type AcornProgram = ReturnType<typeof acorn.parse>['body'];
+
+type ModuleCacheValue =
+  | false
+  | 'commonjs'
+  | 'module';
+
+const _isModuleCache = new Map<string, ModuleCacheValue>();
+function isModule(
+  filePath: string,
+) {
+
+  const parsedFilePath = nodePath.parse(filePath);
+  const root = parsedFilePath.root;
+
+  let path = parsedFilePath.dir;
+  while(true) {
+    // If we hit volume root or node_modules, we didn't find a package.json
+    if (path === root) {
+      return false;
+    }
+
+    const parsedPath = nodePath.parse(path);
+    // If we have hit node_modules, we didn't find a package.json
+    if (parsedPath.name === 'node_modules') {
+      return false;
+    }
+
+    const packagePath = nodePath.resolve(path, './package.json');
+
+    const cachedValue = _isModuleCache.get(packagePath);
+    if (cachedValue !== undefined) {
+      if (cachedValue === 'module') {
+        return true;
+      }
+      if (cachedValue === 'commonjs') {
+        return false;
+      }
+    } else {
+      let packageJson: unknown = undefined;
+      try {
+        const packageJsonContents = nodeFs.readFileSync(packagePath, 'utf-8');
+        packageJson = JSON.parse(packageJsonContents);
+      } catch {
+      }
+
+      let valueToCache: ModuleCacheValue = false;
+      if (packageJson !== undefined) {
+        if (packageJson !== null && typeof packageJson === 'object' && 'type' in packageJson && packageJson['type'] === 'module') {
+          valueToCache = 'module';
+        } else {
+          valueToCache = 'commonjs';
+        }
+      }
+
+      _isModuleCache.set(packagePath, valueToCache);
+
+      if (valueToCache !== false) {
+        return valueToCache === 'module';
+      }
+    }
+
+    path = parsedPath.dir;
+  }
+}
 
 function addExportNames(names: Array<string>, node: any) {
   switch (node.type) {
@@ -318,10 +383,15 @@ async function transformModuleIfNeeded(loaderCtx: LoaderContext<{}>, source: str
 
 const loader: LoaderDefinition = function (source) {
   const next = this.async();
-  transformModuleIfNeeded(this, source)
-    .then((newSrc) => {
-      next(null, newSrc);
-    });
+
+  if (isModule(this.resourcePath)) {
+    transformModuleIfNeeded(this, source)
+      .then((newSrc) => {
+        next(null, newSrc);
+      });
+  } else {
+    next(null, source);
+  }
 }
 
 export = loader;
