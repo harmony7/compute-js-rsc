@@ -5,9 +5,8 @@ import {
   type ClientManifest,
   type ReactFormState,
   type ServerManifest,
-} from "../types";
-
-declare function __webpack_require__(moduleId: string): any;
+} from '../types.js';
+import { loadServerAction } from './utils.js';
 
 export type ModuleMaps = {
   clientModuleMap?: ClientManifest;
@@ -42,32 +41,33 @@ export function generateFlightStream(
 }
 
 // * SERVER *
+// Performs an RSC action call from a form submission and returns the result.
+export async function execRscFormAction(
+  request: Request,
+) {
+  const formData = await request.formData();
+  const action = await ReactServerDOMServer.decodeAction(formData, _moduleMaps.serverModuleMap);
+  const result = await action();
+  return ReactServerDOMServer.decodeFormState(result, formData);
+}
+
+// * SERVER *
 // Performs an RSC action call and returns the result.
 export async function execRscAction(
   rscAction: string,
-  body: any,
+  body: FormData | string,
 ): Promise<any> {
   if (_moduleMaps.serverModuleMap == null) {
     throw new Error('setModuleMaps must be called before execRscAction');
   }
 
-  // Find the module and action based on the rscAction value
-  const [url, name] = rscAction.split('#');
-  const moduleId = _moduleMaps.serverModuleMap[url]?.id;
-  if (moduleId == null) {
-    throw new Error('Module not found');
-  }
-
-  const module = __webpack_require__(moduleId);
-  const action = module[name];
-
-  // Validate that this is actually a function we intended to expose and
-  // not the client trying to invoke an arbitrary function.
-  if (action.$$typeof !== Symbol.for('react.server.reference')) {
+  // Load the module and find the action based on the rscAction value
+  const action = loadServerAction(rscAction, _moduleMaps.serverModuleMap);
+  if (action == null) {
     throw new Error('Invalid action');
   }
 
-  // Decode the args from the body.
+  // Decode the args from the body
   const args = await ReactServerDOMServer.decodeReply(body, _moduleMaps.serverModuleMap);
 
   // Make the function call
