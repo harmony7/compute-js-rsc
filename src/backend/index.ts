@@ -1,5 +1,5 @@
 import React from 'react';
-import ReactServerDOMServer from 'react-server-dom-webpack/server';
+import ReactServerDOMServer from 'react-server-dom-webpack/server.edge';
 
 import {
   type ClientManifest,

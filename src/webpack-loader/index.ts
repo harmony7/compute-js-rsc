@@ -192,7 +192,7 @@ async function transformClientModule(
   }
 
   let newSrc =
-    'import {registerClientReference} from "react-server-dom-webpack/server";\n';
+    'import {registerClientReference} from "react-server-dom-webpack/server.edge";\n';
   for (let i = 0; i < names.length; i++) {
     const name = names[i];
     if (name === 'default') {
@@ -318,7 +318,7 @@ async function transformServerModule(
 
   let newSrc = source + '\n\n;';
   newSrc +=
-    'import {registerServerReference} from "react-server-dom-webpack/server";\n';
+    'import {registerServerReference} from "react-server-dom-webpack/server.edge";\n';
   localNames.forEach(function (exported, local) {
     if (localTypes.get(local) !== 'function') {
       // We first check if the export is a function and if so annotate it.
