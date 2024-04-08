@@ -12,7 +12,6 @@ export async function hydrateApp(flightStream?: ReadableStream<Uint8Array>) {
   if (flightStream != null) {
     flightResponse = Promise.resolve(new Response(flightStream));
   } else {
-    // Fetch flight data from backend
     flightResponse = fetch('/', {
       headers: {
         Accept: 'text/x-component',
