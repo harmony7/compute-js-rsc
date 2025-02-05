@@ -8,7 +8,7 @@ export async function renderFlightStreamToHtmlStream(
   bootstrapScripts?: string[],
 ) {
   const { formState, root } = await ReactServerDOMClient.createFromReadableStream(flightStream, {
-    ssrManifest: {
+    serverConsumerManifest: {
       moduleMap: null,
       moduleLoading: null,
     }
