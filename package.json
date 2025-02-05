@@ -1,7 +1,7 @@
 {
   "name": "@h7/compute-js-rsc",
   "description": "React Server utility library for Fastly Compute",
-  "version": "0.1.0-alpha.4",
+  "version": "0.1.0-alpha.5",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/harmony7/compute-js-rsc.git"
@@ -30,21 +30,22 @@
   },
   "dependencies": {
     "acorn-loose": "^8.4.0",
-    "react": "19.0.0-canary-7a2609eed-20240403",
-    "react-dom": "19.0.0-canary-7a2609eed-20240403",
-    "react-server-dom-webpack": "19.0.0-canary-7a2609eed-20240403"
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-server-dom-webpack": "^19.0.0"
   },
   "devDependencies": {
-    "@fastly/js-compute": "^3.11.0",
-    "@types/react": "^18.2.73",
-    "@types/react-dom": "^18.2.23",
+    "@fastly/js-compute": "~3.27.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
     "c8": "^8.0.1",
     "ts-node": "^10.9.1",
     "typescript": "^5.4.3",
-    "webpack": "^5.90.1"
+    "webpack": "^5.97.1"
   },
   "peerDependencies": {
-    "react-server-dom-webpack": "19.0.0-canary-7a2609eed-20240403",
+    "@fastly/js-compute": "<3.28.0",
+    "react-server-dom-webpack": "^19.0.0",
     "webpack": "^5"
   },
   "files": [
