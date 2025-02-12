@@ -35,7 +35,7 @@
     "react-server-dom-webpack": "^19.0.0"
   },
   "devDependencies": {
-    "@fastly/js-compute": "~3.27.0",
+    "@fastly/js-compute": "^3.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "c8": "^8.0.1",
@@ -44,7 +44,7 @@
     "webpack": "^5.97.1"
   },
   "peerDependencies": {
-    "@fastly/js-compute": "<3.28.0",
+    "@fastly/js-compute": "^3.0.0",
     "react-server-dom-webpack": "^19.0.0",
     "webpack": "^5"
   },
